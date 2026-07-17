@@ -1,4 +1,5 @@
-const API = "http://localhost:8000/v1";
+const BASE_URL = import.meta.env.VITE_API_URL;
+const API = `${BASE_URL}/v1`;
 
 export async function uploadDocument(
   file: File
