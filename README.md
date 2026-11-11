@@ -1,75 +1,47 @@
-# React + TypeScript + Vite
+# Northbridge AI — web client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript + Vite front end for the Enterprise RAG API
+(`enterprise-rag` repository).
 
-Currently, two official plugins are available:
+## Run locally
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. Start the backend (`uvicorn app.main:app` in `enterprise-rag`) with
+   `ADMIN_USERNAME` / `ADMIN_PASSWORD` set in its `.env`.
+2. Here:
 
-## React Compiler
+   ```bash
+   cp .env.example .env     # VITE_API_URL=http://127.0.0.1:8000
+   npm install
+   npm run dev              # http://localhost:5173
+   ```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+3. Sign in with the administrator account. Create more users under
+   **Administration**.
 
-## Expanding the ESLint configuration
+`npm run build` type-checks and builds to `dist/`; `npm run lint` runs ESLint.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Deploying
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Set `VITE_API_URL` to the backend's `https://` address at build time, and add
+this site's exact origin to the backend's `CORS_ORIGINS`.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## How it works
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Area | Where |
+| --- | --- |
+| API calls, bearer token, error contract → user messages | `src/services/http.ts`, `src/services/api.ts` |
+| Sign-in state; a rejected token returns the user to sign-in | `src/auth/` |
+| What each role is offered (the server enforces the same rules) | `src/auth/permissions.ts` |
+| Ask, answer with citation chips, sources, citation checks | `src/pages/ChatPage.tsx`, `src/components/results/` |
+| Upload, ingestion status and failures, sharing, deletion | `src/pages/KnowledgeBasePage.tsx` |
+| Users and audit log (administrators) | `src/pages/AdminPage.tsx` |
+| Own profile and password | `src/pages/AccountPage.tsx` |
 
-```
+The access token is kept in memory and `sessionStorage`: it survives a page
+refresh and is discarded when the tab closes.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
-```
+| Role | Sees |
+| --- | --- |
+| Reader | Chat, Knowledge Base (read-only), Account |
+| Document Manager | + upload, sharing, delete, ingestion status and failure reasons |
+| Administrator | + Administration (users, audit log) |

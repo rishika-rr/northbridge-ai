@@ -1,143 +1,54 @@
-import { motion } from "framer-motion";
+import { formatSeconds } from "../../lib/format";
+import type { AskResponse } from "../../services/api";
+import { SectionLabel } from "../ui/controls";
 
-type Props = {
-  confidence: number;
-  latency: number;
-
-  documents: number;
-
-  citations: number;
-
-  model: string;
-};
-
-function Metric({
-  value,
-  label,
-}: {
-  value: string;
-  label: string;
-}) {
+function Metric({ value, label, note }: { value: string; label: string; note?: string }) {
   return (
     <div
       className="
-      rounded-[24px]
-
-      border
-      border-white/6
-
-      bg-white/[0.025]
-
-      px-7
-      py-7
-
-      transition-all
-      duration-200
-
-      hover:border-blue-500/15
+      rounded-[24px] border border-white/6 bg-white/[0.025] px-7 py-7
+      transition-all duration-200 hover:border-blue-500/15
       "
     >
-      <h3
-        className="
-        text-[30px]
-
-        font-semibold
-
-        tracking-[-0.04em]
-
-        text-white
-
-        break-words
-        "
-      >
-        {value}
-      </h3>
-
-      <p
-        className="
-        mt-2
-
-        text-[13px]
-
-        text-zinc-500
-        "
-      >
-        {label}
-      </p>
-
+      <p className="text-[30px] font-semibold tracking-[-0.04em] text-white break-words">{value}</p>
+      <p className="mt-2 text-[13px] text-zinc-500">{label}</p>
+      {note && <p className="mt-2 text-[12px] leading-5 text-zinc-600">{note}</p>}
     </div>
   );
 }
 
-export default function Insights({
-  confidence,
-  latency,
-  documents,
-  citations,
-  model,
-}: Props) {
+export default function Insights({ result }: { result: AskResponse }) {
+  const { confidence, latency_ms, retrieved_chunks, citations, verified_citations, model } = result;
+
   return (
-    <motion.section
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.15 }}
-    >
+    <section aria-labelledby="insights-heading">
+      <SectionLabel>
+        <span id="insights-heading">Insights</span>
+      </SectionLabel>
 
-      <p
-        className="
-        text-[11px]
+      <div className="mt-7 grid grid-cols-2 gap-5">
+        {!result.no_evidence && (
+          <Metric
+            value={confidence !== null ? `${Math.round(confidence * 100)}%` : "–"}
+            label="Confidence indicator"
+            note="Half from how relevant the sources are, half from the share of citations that passed the check. A rough signal, not the probability that the answer is correct."
+          />
+        )}
 
-        uppercase
+        <Metric value={formatSeconds(latency_ms)} label="Response time" />
 
-        tracking-[0.28em]
+        <Metric value={retrieved_chunks.toString()} label="Source passages used" />
 
-        text-blue-400
+        {!result.no_evidence && (
+          <Metric
+            value={citations > 0 ? `${verified_citations} of ${citations}` : "None"}
+            label="Citations that passed the check"
+            note={citations === 0 ? "The answer contains no citation markers to check." : undefined}
+          />
+        )}
 
-        font-medium
-        "
-      >
-        Insights
-      </p>
-
-      <div
-        className="
-        mt-7
-
-        grid
-
-        grid-cols-2
-
-        gap-5
-        "
-      >
-
-        <Metric
-          value={`${Math.round(confidence * 100)}%`}
-          label="Confidence"
-        />
-
-        <Metric
-          value={`${(latency / 1000).toFixed(2)} s`}
-          label="Latency"
-        />
-
-        <Metric
-          value={documents.toString()}
-          label="Retrieved Chunks"
-        />
-
-        <Metric
-          value={citations.toString()}
-          label="Verified Citations"
-        />
-
-        <Metric
-          value={model}
-          label="Model"
-        />
-
+        {model && <Metric value={model} label="Model" />}
       </div>
-
-    </motion.section>
+    </section>
   );
 }
